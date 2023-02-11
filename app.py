@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from bson import ObjectId
 from fastapi.middleware.cors import CORSMiddleware 
+from datetime import datetime
 import motor.motor_asyncio
 import pydantic
 
@@ -33,9 +34,10 @@ async def get_all_profiles():
         return "No profile present"
     return mulprofiles[0]
 
-@app.post("/profile")
+@app.post("/profile",status_code=201)
 async def create_new_profile(request: Request):
     profile_obj = await request.json()
+    profile_obj["last_updated"]=datetime.now()
 
     new_profile = await db["profile"].insert_one(profile_obj)
     created_profile = await db["profile"].find_one({"_id": new_profile.inserted_id})
