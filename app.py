@@ -26,7 +26,8 @@ pydantic.json.ENCODERS_BY_TYPE[ObjectId]=str
 client = motor.motor_asyncio.AsyncIOMotorClient("mongodb+srv://week4:oKbzC9wuJa6nIJKI@cluster0.ldjatx3.mongodb.net/?retryWrites=true&w=majority")
 
 db = client.water_tank
-x=0
+#dbb = client.actual_water_tank_details
+
 @app.get("/profile")
 async def get_all_profiles():
     mulprofiles = await db["profile"].find().to_list(999)
@@ -42,6 +43,24 @@ async def create_new_profile(request: Request):
     new_profile = await db["profile"].insert_one(profile_obj)
     created_profile = await db["profile"].find_one({"_id": new_profile.inserted_id})
     return created_profile
+
+@app.get("/data",status_code=201)
+async def get_all_data():
+    tank_data = await db["data"].find().to_list(999)
+    return tank_data
+
+@app.get("/data/{id}")
+async def get_one_tank(id: str):
+    tank_one = await db["data"].find_one({"_id": ObjectId(id)})
+    return tank_one
+
+@app.post("/data",status_code=201)
+async def create_new_tank(request: Request):
+    tank_obj = await request.json()
+
+    new_tank = await db["data"].insert_one(tank_obj)
+    created_tank = await db["data"].find_one({"_id": new_tank.inserted_id})
+    return created_tank
 
 """"
 @app.post("/todos")
