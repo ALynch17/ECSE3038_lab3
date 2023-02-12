@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from bson import ObjectId
 from fastapi.middleware.cors import CORSMiddleware 
+from fastapi import FastAPI, HTTPException
 from datetime import datetime
 import motor.motor_asyncio
 import pydantic
@@ -26,7 +27,6 @@ pydantic.json.ENCODERS_BY_TYPE[ObjectId]=str
 client = motor.motor_asyncio.AsyncIOMotorClient("mongodb+srv://week4:oKbzC9wuJa6nIJKI@cluster0.ldjatx3.mongodb.net/?retryWrites=true&w=majority")
 
 db = client.water_tank
-#dbb = client.actual_water_tank_details
 
 @app.get("/profile")
 async def get_all_profiles():
@@ -62,23 +62,24 @@ async def create_new_tank(request: Request):
     created_tank = await db["data"].find_one({"_id": new_tank.inserted_id})
     return created_tank
 
-""""
-@app.post("/todos")
-async def create_new_todo(request: Request):
-    todo_object = await request.json()
+@app.patch("/data/{id}")
+async def update_tank(id: str, request: Request):
+    updatedata = await request.json()
+    updatetank = await db["data"].update_one({"_id": ObjectId(id)},{'$set': updatedata})
+    ovtank = await db["data"].find_one({"_id": ObjectId(id)})
+    if updatetank.modified_count==1:
+       # return ovtank
+       if ovtank is not None:
+            return ovtank
+    else:
+        raise HTTPException(status_code=304,detail="Item not modified")
 
-    new_todo = await db["todos"].insert_one(todo_object)
-    created_todo = await db["todos"].find_one({"_id": new_todo.inserted_id})
 
-    return created_todo
-
-@app.get("/todos")
-async def get_all_todos():
-    todos = await db["todos"].find().to_list(999) 
-    return todos
-
-@app.get("/todo/{id}")
-async def get_one_todo_by_id(id:str):
-    todo = await db["todos"].find_one({"_id": ObjectId(id)})
-    return todo
-"""
+@app.delete("/data/{id}",status_code=204)
+async def delete_tank(id: str):
+    checktank = await db["data"].find_one({"_id": ObjectId(id)})
+    
+    if checktank is not None:
+        deletetank= await db["data"].delete_one({"_id":ObjectId(id)})
+    else:
+        raise HTTPException(status_code=404,detail="Item not found")
